@@ -101,7 +101,7 @@ module Mapi
   		end
   	end
 
-  	def to_s opts={}
+    def to_s opts={}
   		opts = {:boundary_counter => 0}.merge opts
   		if multipart?
   			boundary = Mime.make_boundary opts[:boundary_counter] += 1, self
@@ -109,14 +109,19 @@ module Mapi
   				flatten.join("\r\n--" + boundary)
   			content_type, attrs = Mime.split_header @headers['Content-Type'][0]
   			attrs['boundary'] = boundary
-  			@headers['Content-Type'] = [([content_type] + attrs.map { |key, val| %{#{key}="#{val}"} }).join('; ')]
+  			@headers['Content-Type'] = [([content_type] + attrs.map { |key, val| %{#{key}="#{val}"} }).join(';')]
   		end
 
-  		str = ''
+			str = ''.encode('UTF-8')
   		@headers.each do |key, vals|
-  			vals.each { |val| str << "#{key}: #{val}\r\n" }
+				if vals.is_a?(Array)
+					vals.each { |val| str << "#{key}: #{val}\r\n".encode('UTF-8', invalid: :replace, undef: :replace) }
+				else
+					str << "#{key}: #{vals}\r\n".encode('UTF-8', invalid: :replace, undef: :replace)
+				end
+
   		end
-  		str << "\r\n" + @body
+  		str << "\r\n" + @body.encode('UTF-8', invalid: :replace, undef: :replace)
   	end
 
   	def self.split_header header
@@ -164,5 +169,3 @@ d   efgh=i: ;\\j"; charset=us-ascii
 Content-Type: text/plain; name="asdf'b\"c"; charset=us-ascii
 
 =end
-
-
